@@ -40,7 +40,7 @@ jobs:
         sudo dpkg -i migrate.linux-amd64.deb
         which migrate
     - name: Run migration
-      run: make migration
+      run: make migrateup
 
     - name: Test
       run: make test
