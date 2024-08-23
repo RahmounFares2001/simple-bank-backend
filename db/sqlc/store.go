@@ -113,9 +113,9 @@ func addMoney(
 	accountID1 int64,
 	amount1 int64,
 	accountID2 int64,
-	amount2 int64b vvbn   
+	amount2 int64,
 ) (account1 Account, account2 Account, err error) {
-	account1, err := q.AddAccountBalence(ctx, AddAccountBalenceParams{
+	account1, err = q.AddAccountBalence(ctx, AddAccountBalenceParams{
 		ID:     accountID1,
 		Amount: amount1,
 	})
@@ -123,7 +123,7 @@ func addMoney(
 		return
 	}
 
-	account2, err := q.AddAccountBalence(ctx, AddAccountBalenceParams{
+	account2, err = q.AddAccountBalence(ctx, AddAccountBalenceParams{
 		ID:     accountID2,
 		Amount: amount2,
 	})
