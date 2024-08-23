@@ -1,0 +1,46 @@
+name: ci-test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16.4
+        env:
+          POSTGRES_USER: fares
+          POSTGRES_PASSWORD: fares
+          POSTGRES_DB: bankDB
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+
+    -name: Install golang migration
+      run: |
+      curl -L https://github.com/golang-migrate/migrate/releases/download/$version/migrate.$os-$arch.tar.gz | tar xvz
+      sudo mv migrate.linux-amd64.tar.gz.1 /usr/bin/migrate
+      which migrate
+    -name: Run migration
+      nun: make migration
+
+    - name: Test
+      run: make test
