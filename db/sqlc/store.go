@@ -45,7 +45,7 @@ func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
 	return tx.Commit()
 }
 
-// TransferTxParams contain the input params
+// TransferTxParams: input params
 type TransferTxParams struct {
 	FromAccountID int64 `json:"from_account_id"`
 	ToAccountID   int64 `json:"to_account_id"`
@@ -62,11 +62,6 @@ type TransferTxResult struct {
 }
 
 // TransferTx : money transfer from account to other
-/* in single db transaction: create transfer reccord
-1.add account entries
-2.update accounts and ballence
-*/
-
 func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
 	var result TransferTxResult
 
@@ -82,15 +77,6 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 
-		// update accounts
-		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
-			AccountID: arg.FromAccountID,
-			Amount:    -arg.Amount,
-		})
-		if err != nil {
-			return err
-		}
-
 		// update balence
 		// get account => update it balence
 		if arg.FromAccountID < arg.ToAccountID {
@@ -99,6 +85,9 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		} else {
 			result.ToAccount, result.FromAccount, err =
 				addMoney(ctx, q, arg.ToAccountID, arg.Amount, arg.FromAccountID, -arg.Amount)
+		}
+		if err != nil {
+			return err
 		}
 
 		return nil
@@ -128,4 +117,42 @@ func addMoney(
 		Amount: amount2,
 	})
 	return
+}
+
+// create entrey & update balance
+type EntryBalenceTxParams struct {
+	AccountId int64 `json:"account_id"`
+	Amount    int64 `json:"amount"`
+}
+
+type EntryBalenceTxResult struct {
+	Entry   Entry   `json:"entry"`
+	Account Account `json:"account"`
+}
+
+func (store *Store) EntryBalenceTx(ctx context.Context, arg EntryBalenceTxParams) (EntryBalenceTxResult, error) {
+	var result EntryBalenceTxResult
+
+	err := store.execTx(ctx, func(q *Queries) error {
+		var err error
+		result.Entry, err = q.CreateEntry(ctx, CreateEntryParams{
+			AccountID: arg.AccountId,
+			Amount:    arg.Amount,
+		})
+		if err != nil {
+			return err
+		}
+
+		result.Account, err = q.AddAccountBalence(ctx, AddAccountBalenceParams{
+			Amount: arg.Amount,
+			ID:     arg.AccountId,
+		})
+		if err != nil {
+			return err
+		}
+
+		return err
+	})
+
+	return result, err
 }
